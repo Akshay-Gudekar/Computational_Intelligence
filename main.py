@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -5,6 +6,9 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
+
+os.makedirs('visualizations/filters', exist_ok=True)
+os.makedirs('visualizations/feature_maps', exist_ok=True)
 
 # ==================================================================
 # 1. Manual Convolution Demonstration
@@ -133,9 +137,9 @@ print(f"\nTest Accuracy: {100 * correct / total:.2f}%")
 # ==================================================================
 # 3. Visualization of Filters and Feature Maps
 # ==================================================================
-print("\n" + "="*60 + "\nVisualizing Filters and Feature Maps\n" + "="*60)
+print("\n" + "="*60 + "\nSaving Visualizations\n" + "="*60)
 
-# Visualize first layer filters
+# Save first layer filters
 filters = model.conv1.weight.data.cpu().numpy()
 plt.figure(figsize=(10, 5))
 for i in range(16):
@@ -143,11 +147,22 @@ for i in range(16):
     plt.imshow(filters[i][0], cmap='gray')
     plt.axis('off')
 plt.suptitle('First Layer Filters')
-plt.show()
+plt.savefig('visualizations/filters/first_layer_filters.png')
+plt.close()
 
-# Prepare for feature map visualization
+# Save second layer filters
+filters = model.conv2.weight.data.cpu().numpy()
+plt.figure(figsize=(10, 8))
+for i in range(32):
+    plt.subplot(8, 4, i+1)
+    plt.imshow(filters[i][0], cmap='gray')
+    plt.axis('off')
+plt.suptitle('Second Layer Filters')
+plt.savefig('visualizations/filters/second_layer_filters.png')
+plt.close()
+
+# Hook for feature maps
 activations = {}
-
 def get_activation(name):
     def hook(model, input, output):
         activations[name] = output.detach()
@@ -156,33 +171,38 @@ def get_activation(name):
 model.conv1.register_forward_hook(get_activation('conv1'))
 model.conv2.register_forward_hook(get_activation('conv2'))
 
-# Get sample image and compute activations
+# Process and save feature maps
 sample_image, _ = next(iter(train_loader))
 sample_image = sample_image[0].unsqueeze(0)
 output = model(sample_image)
 
-# Visualize input image
+# Save input image
 plt.imshow(sample_image[0][0], cmap='gray')
 plt.title('Input Image')
 plt.axis('off')
-plt.show()
+plt.savefig('visualizations/feature_maps/input_image.png')
+plt.close()
 
-# Visualize first convolutional layer activations
+# Save first layer feature maps
 conv1_maps = activations['conv1'][0].cpu().numpy()
 plt.figure(figsize=(10, 5))
 for i in range(16):
     plt.subplot(4, 4, i+1)
     plt.imshow(conv1_maps[i], cmap='gray')
     plt.axis('off')
-plt.suptitle('Conv1 Feature Maps')
-plt.show()
+plt.suptitle('First Layer Feature Maps')
+plt.savefig('visualizations/feature_maps/first_layer_feature_maps.png')
+plt.close()
 
-# Visualize second convolutional layer activations
+# Save second layer feature maps
 conv2_maps = activations['conv2'][0].cpu().numpy()
 plt.figure(figsize=(10, 8))
 for i in range(32):
     plt.subplot(8, 4, i+1)
     plt.imshow(conv2_maps[i], cmap='gray')
     plt.axis('off')
-plt.suptitle('Conv2 Feature Maps')
-plt.show()
+plt.suptitle('Second Layer Feature Maps')
+plt.savefig('visualizations/feature_maps/second_layer_feature_maps.png')
+plt.close()
+
+print("Saved visualizations in:\n- visualizations/filters/\n- visualizations/feature_maps/")
